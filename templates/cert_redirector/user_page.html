@@ -1,0 +1,32 @@
+<!-- CTFd/plugins/ctfd_cert_redirector/templates/cert_redirector/user_page.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="container pt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header"><strong>Claim your certificate</strong></div>
+        <div class="card-body">
+          {% if not ready %}
+            <div class="alert alert-warning mb-3">
+              Certificates are not available: {{ status_msg }}
+            </div>
+          {% else %}
+            <p class="mb-3">
+              You are signed in as <strong>{{ user.name or user.email }}</strong>
+              {% if team_id %} from team <strong>{{ team_name }}</strong>{% endif %}.
+            </p>
+            <a href="{{ claim_url }}" class="btn btn-primary">
+              Claim certificate
+            </a>
+            <p class="text-muted mt-3 mb-0">
+              You will be redirected to the certificate portal ({{ external_url }}).
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

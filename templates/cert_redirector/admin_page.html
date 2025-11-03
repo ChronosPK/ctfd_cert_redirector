@@ -1,0 +1,38 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="content">
+  <div class="container" style="max-width:720px;padding:1.25rem">
+    <h2 style="margin-bottom:0.5rem">Certificates — Status</h2>
+
+    {% if not ready %}
+      <div class="alert alert-danger" role="alert">
+        <strong>NOT READY:</strong> {{ status_msg }}
+      </div>
+    {% else %}
+      <div class="alert alert-success" role="alert">
+        <strong>OK:</strong> Bridge configured.
+      </div>
+    {% endif %}
+
+    <div class="card" style="padding:1rem;margin-bottom:1rem">
+      <p style="margin:0.25rem 0"><strong>Admin:</strong> {{ who }}</p>
+      <p style="margin:0.25rem 0"><strong>External URL:</strong> <code>{{ external_url }}</code></p>
+      <p style="margin:0.25rem 0"><strong>TTL:</strong> {{ ttl }}s</p>
+      <p style="margin:0.25rem 0"><strong>AUD:</strong> <code>{{ aud }}</code></p>
+    </div>
+
+    <a class="btn btn-secondary" href="{{ test_link }}" target="_blank" rel="nofollow noopener">
+      Open user page (new tab)
+    </a>
+
+    <h3 style="margin-top:1.5rem">Environment</h3>
+    <pre>CTFDBRIDGE_EXTERNAL_URL=https://certs.example.org/claim
+CTFDBRIDGE_SHARED_SECRET=&lt;long random secret&gt;
+# optional:
+CTFDBRIDGE_TTL=600
+CTFDBRIDGE_AUD=chronos-cert
+# to hide this page:
+CTFDBRIDGE_ADMIN_UI=0</pre>
+  </div>
+</div>
+{% endblock %}

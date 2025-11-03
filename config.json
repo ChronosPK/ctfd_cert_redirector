@@ -1,0 +1,5 @@
+{
+  "name": "Certificates",
+  "route": "/admin/certificates/",
+  "icon": "fa fa-certificate"
+}

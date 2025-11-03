@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card mb-4">
+        <div class="card-body text-center">
+          <h3 class="mb-3" style="color: var(--bs-body-color);">
+            Certificates
+          </h3>
+          <p class="mb-3">
+            After the competition ends you can retrieve a personalized
+            participation or prize certificate from this page.
+          </p>
+
+          {% if not ready %}
+            <div class="alert alert-warning text-start">
+              Certificates are not configured yet. Please check back later.
+            </div>
+          {% elif not ended and not allow %}
+            <div class="alert alert-info text-start">
+              Certificates will be available here after the CTF ends.
+            </div>
+          {% else %}
+            <p class="mb-3">
+              You will be redirected to the external certificate portal in a new tab.
+            </p>
+            <a
+              href="{{ url_for('ctfd_cert_redirector_user.certificates_claim') }}"
+              target="_blank"
+              class="btn btn-primary btn-lg"
+            >
+              Claim your certificate
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

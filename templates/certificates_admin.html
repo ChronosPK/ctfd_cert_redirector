@@ -1,0 +1,79 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h3 class="card-title mb-3">Certificates bridge</h3>
+          <p class="mb-2">
+            Redirect authenticated participants to an external certificate portal
+            with a signed, short-lived token.
+          </p>
+          <ul class="mb-3 small">
+            <li>Token fields: user id, email, name, team id, team name, team score, team rank.</li>
+            <li>Signature: HMAC-SHA256 over a base64url-encoded JSON body.</li>
+            <li>Lifetime: <strong>{{ ttl }}</strong> seconds (audience <code>{{ aud }}</code>).</li>
+            <li>Destination: <code>{{ external_url or 'not configured' }}</code></li>
+          </ul>
+
+          <div class="alert {% if ready %}alert-success{% else %}alert-warning{% endif %}">
+            <strong>Status:</strong>
+            {% if ready %}
+              Ready.
+            {% else %}
+              Not configured. Set <code>CTFDBRIDGE_EXTERNAL_URL</code> and
+              <code>CTFDBRIDGE_SHARED_SECRET</code> on the CTFd service.
+            {% endif %}
+          </div>
+
+          <div class="mt-3">
+            <p class="mb-2"><strong>Claim timing</strong></p>
+            <p class="small mb-3">
+              By default certificates are available only after the CTF end time.
+              You can allow early claims for testing or special cases.
+            </p>
+
+            {% if allow_before_end %}
+              <p class="mb-2">
+                Current mode:
+                <span class="badge bg-success">Early claims enabled</span>
+              </p>
+              <a
+                href="{{ url_for('ctfd_cert_redirector_admin.admin_index', allow_before_end='0') }}"
+                class="btn btn-outline-secondary btn-sm"
+              >
+                Disable early claims
+              </a>
+            {% else %}
+              <p class="mb-2">
+                Current mode:
+                <span class="badge bg-secondary">Only after CTF end</span>
+              </p>
+              <a
+                href="{{ url_for('ctfd_cert_redirector_admin.admin_index', allow_before_end='1') }}"
+                class="btn btn-outline-primary btn-sm"
+              >
+                Enable early claims
+              </a>
+            {% endif %}
+          </div>
+
+          <hr class="my-4"/>
+
+          <div class="d-flex flex-wrap gap-2">
+            <a
+              href="{{ url_for('ctfd_cert_redirector_user.certificates_index') }}"
+              class="btn btn-link p-0"
+              target="_blank"
+            >
+              Open participant view
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
