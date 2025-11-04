@@ -18,7 +18,6 @@ from flask import (
 from CTFd.utils.decorators import authed_only, admins_only
 from CTFd.utils.user import get_current_user, is_admin
 from CTFd.utils import get_config, set_config
-from CTFd.models import Teams
 
 PLUGIN_NAME = "ctfd_cert_redirector"
 ALLOW_BEFORE_END_KEY = "cert_redirector:allow_before_end"
@@ -29,6 +28,9 @@ def b64u(data: bytes) -> str:
 
 
 def make_token(payload: dict, secret: str) -> str:
+    """
+    token = base64url(JSON(payload)) + "." + base64url(HMAC-SHA256(body, secret))
+    """
     body = b64u(json.dumps(payload, separators=(",", ":")).encode())
     sig = hmac.new(secret.encode(), body.encode(), hashlib.sha256).digest()
     return body + "." + b64u(sig)
@@ -46,6 +48,9 @@ def set_allow_before_end(value: bool) -> None:
 
 
 def get_settings():
+    """
+    Read core settings from app.config, which is populated in __init__.py.
+    """
     cfg = current_app.config
     external_url = str(cfg.get("CTFDBRIDGE_EXTERNAL_URL", "")).strip()
     shared_secret = str(cfg.get("CTFDBRIDGE_SHARED_SECRET", "")).strip()
@@ -56,6 +61,9 @@ def get_settings():
 
 
 def ctf_has_ended() -> bool:
+    """
+    Compare current time with CTF 'end' configuration.
+    """
     end = get_config("end")
     if not end:
         return False
@@ -64,46 +72,6 @@ def ctf_has_ended() -> bool:
         return datetime.now(timezone.utc) >= dt
     except Exception:
         return False
-
-
-def compute_team_rank(team: Teams) -> tuple[int | None, int | None]:
-    """
-    Returns (team_score, team_pos) or (None, None).
-    Uses Python-side sorting to avoid touching the Teams.score hybrid
-    property inside SQL expressions.
-    """
-    if team is None:
-        return None, None
-
-    try:
-        team_score = team.score
-    except Exception:
-        return None, None
-
-    if team_score is None:
-        return None, None
-
-    teams = Teams.query.filter(
-        Teams.banned == False,
-        Teams.hidden == False,
-    ).all()
-
-    sorted_teams = sorted(
-        teams,
-        key=lambda t: (
-            (getattr(t, "score", 0) or 0),
-            t.id,
-        ),
-        reverse=True,
-    )
-
-    team_pos = None
-    for idx, t in enumerate(sorted_teams, start=1):
-        if t.id == team.id:
-            team_pos = idx
-            break
-
-    return team_score, team_pos
 
 
 def init_blueprints(app):
@@ -119,6 +87,10 @@ def init_blueprints(app):
         url_prefix="/admin/certificates",
         template_folder="templates",
     )
+
+    # ----------------------------------------------------------------------
+    # User-facing
+    # ----------------------------------------------------------------------
 
     # /certificates and /certificates/
     @user_bp.route("", methods=["GET"], strict_slashes=False)
@@ -150,30 +122,27 @@ def init_blueprints(app):
         if user is None:
             abort(401)
 
-        team = None
-        if getattr(user, "team_id", None):
-            team = Teams.query.filter_by(id=user.team_id).first()
+        now_ts = int(datetime.now(timezone.utc).timestamp())
 
-        team_name = team.name if team is not None else None
-        team_score, team_pos = compute_team_rank(team)
-
+        # MINIMAL payload:
+        # - uid: CTFd user id
+        # - aud: audience
+        # - ts: issued-at time
+        # - ttl: validity window in seconds
         payload = {
             "aud": aud,
-            "uid": user.id,
-            "email": getattr(user, "email", None),
-            "name": user.name,
-            "team_id": getattr(user, "team_id", None),
-            "team_name": team_name,
-            "team_score": team_score,
-            "team_pos": team_pos,
-            "bracket_id": getattr(user, "bracket_id", None),
-            "bracket_name": None,
-            "ts": int(datetime.now(timezone.utc).timestamp()),
-            "ttl": ttl,
+            "uid": int(user.id),
+            "ts": now_ts,
+            "ttl": int(ttl),
         }
+
         token = make_token(payload, shared_secret)
         dest = f"{external_url}?token={token}"
         return redirect(dest, code=302)
+
+    # ----------------------------------------------------------------------
+    # Admin
+    # ----------------------------------------------------------------------
 
     # /admin/certificates and /admin/certificates/
     @admin_bp.route("", methods=["GET"], strict_slashes=False)

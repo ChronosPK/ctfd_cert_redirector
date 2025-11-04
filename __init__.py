@@ -12,6 +12,7 @@ AUD_ENV = "CTFDBRIDGE_AUD"
 
 
 def load(app):
+    # Read from environment once and store in app.config
     external_url = os.getenv(EXTERNAL_URL_ENV, "").strip()
     shared_secret = os.getenv(SECRET_ENV, "").strip()
     ttl = int(os.getenv(TTL_ENV, "600"))
@@ -25,6 +26,7 @@ def load(app):
     from .routes import init_blueprints
     init_blueprints(app)
 
+    # Show link in admin top bar (in addition to config.json menu)
     try:
         register_admin_plugin_menu_bar(
             title="Certificates",
